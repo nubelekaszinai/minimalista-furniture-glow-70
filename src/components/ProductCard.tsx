@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import { redirectToCheckout } from "../utils/stripe";
 
 interface ProductCardProps {
   product: Product;
@@ -11,14 +12,33 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, index }: ProductCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
+    if (!isInStock || isProcessing) return;
+    
+    setIsProcessing(true);
+    
     toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
+      title: "Processing payment",
+      description: `Redirecting to checkout for ${product.name}...`,
       duration: 3000,
     });
+    
+    try {
+      await redirectToCheckout(product.id);
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Error",
+        description: "Could not redirect to checkout. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const isInStock = product.stock > 0;
@@ -64,10 +84,10 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         <div className="mt-4">
           <button 
             onClick={handleBuyNow} 
-            className={`buy-button ${!isInStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!isInStock}
+            className={`buy-button ${!isInStock || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!isInStock || isProcessing}
           >
-            {isInStock ? 'Buy Now' : 'Out of Stock'}
+            {isProcessing ? 'Processing...' : isInStock ? 'Buy Now' : 'Out of Stock'}
           </button>
         </div>
       </div>
