@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { GoogleSpreadsheet, GoogleSpreadsheetRow } from 'google-spreadsheet';
 import Stripe from 'stripe';
 import fs from 'fs';
 import path from 'path';
@@ -31,12 +31,42 @@ const stripe = new Stripe('sk_test_51R5cdT2K3ie3J8HoQb8YdLr06na5UxJaSTIZCvZeoHd8
 // Connect to Google Sheets
 const connectToGoogleSheets = async () => {
   try {
-    await doc.useServiceAccountAuth(credentials);
+    await doc.useServiceAccountAuth({
+      client_email: credentials.client_email,
+      private_key: credentials.private_key,
+    });
     await doc.loadInfo();
     console.log('Connected to Google Sheets: ' + doc.title);
   } catch (error) {
     console.error('Error connecting to Google Sheets:', error);
   }
+};
+
+// Define type for row data to make TypeScript happy
+interface ProductRowData {
+  ID?: string;
+  Name: string;
+  Description: string;
+  'Price (€)': string;
+  'Image URL': string;
+  Category: string;
+  Stock: string;
+  Status: string;
+}
+
+// Helper function to extract product data from a row
+const extractProductData = (row: GoogleSpreadsheetRow) => {
+  const rowData = row.toObject() as ProductRowData;
+  return {
+    id: rowData.ID || row.rowIndex.toString(),
+    name: rowData.Name,
+    description: rowData.Description,
+    price: parseFloat(rowData['Price (€)']),
+    image: rowData['Image URL'],
+    category: rowData.Category,
+    stock: parseInt(rowData.Stock),
+    status: rowData.Status
+  };
 };
 
 // API Routes
@@ -49,17 +79,12 @@ app.get('/api/products', async (req, res) => {
     const rows = await sheet.getRows();
     
     const products = rows
-      .filter(row => row.Stock > 0 && row.Status === 'active')
+      .filter(row => {
+        const rowData = row.toObject() as ProductRowData;
+        return parseInt(rowData.Stock) > 0 && rowData.Status === 'active';
+      })
       .slice(0, 6) // Only get the first 6 active products
-      .map(row => ({
-        id: row.ID || row._rowNumber,
-        name: row.Name,
-        description: row.Description,
-        price: parseFloat(row['Price (€)']),
-        image: row['Image URL'],
-        category: row.Category,
-        stock: parseInt(row.Stock),
-      }));
+      .map(row => extractProductData(row));
     
     res.json(products);
   } catch (error) {
@@ -78,11 +103,16 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const sheet = doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
     
-    const productRow = rows.find(row => row.ID == productId || row._rowNumber == productId);
+    const productRow = rows.find(row => {
+      const rowData = row.toObject() as ProductRowData;
+      return rowData.ID === productId || row.rowIndex.toString() === productId;
+    });
     
     if (!productRow) {
       return res.status(404).json({ error: 'Product not found' });
     }
+    
+    const productData = productRow.toObject() as ProductRowData;
     
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -92,11 +122,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
           price_data: {
             currency: 'eur',
             product_data: {
-              name: productRow.Name,
-              description: productRow.Description,
-              images: [productRow['Image URL']],
+              name: productData.Name,
+              description: productData.Description,
+              images: [productData['Image URL']],
             },
-            unit_amount: parseFloat(productRow['Price (€)']) * 100, // Convert to cents
+            unit_amount: parseFloat(productData['Price (€)']) * 100, // Convert to cents
           },
           quantity: 1,
         },
@@ -142,16 +172,22 @@ app.post('/api/webhook', bodyParser.raw({ type: 'application/json' }), async (re
         const sheet = doc.sheetsByIndex[0];
         const rows = await sheet.getRows();
         
-        const productRow = rows.find(row => row.ID == productId || row._rowNumber == productId);
+        const productRow = rows.find(row => {
+          const rowData = row.toObject() as ProductRowData;
+          return rowData.ID === productId || row.rowIndex.toString() === productId;
+        });
         
         if (productRow) {
+          const productData = productRow.toObject() as ProductRowData;
           // Decrease stock by 1
-          const newStock = parseInt(productRow.Stock) - 1;
-          productRow.Stock = newStock;
+          const newStock = parseInt(productData.Stock) - 1;
+          
+          // Update the row data
+          await productRow.set('Stock', newStock.toString());
           
           // If stock reaches 0, mark as sold
           if (newStock <= 0) {
-            productRow.Status = 'sold';
+            await productRow.set('Status', 'sold');
           }
           
           await productRow.save();
@@ -176,28 +212,33 @@ app.put('/api/products/:id', async (req, res) => {
     const sheet = doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
     
-    const productRow = rows.find(row => row.ID == id || row._rowNumber == id);
+    const productRow = rows.find(row => {
+      const rowData = row.toObject() as ProductRowData;
+      return rowData.ID === id || row.rowIndex.toString() === id;
+    });
     
     if (!productRow) {
       return res.status(404).json({ error: 'Product not found' });
     }
     
     // Update product fields
-    if (name) productRow.Name = name;
-    if (description) productRow.Description = description;
-    if (price) productRow['Price (€)'] = price;
-    if (image) productRow['Image URL'] = image;
+    if (name) await productRow.set('Name', name);
+    if (description) await productRow.set('Description', description);
+    if (price) await productRow.set('Price (€)', price.toString());
+    if (image) await productRow.set('Image URL', image);
     
     await productRow.save();
     
+    const updatedData = productRow.toObject() as ProductRowData;
+    
     res.json({
-      id: productRow.ID || productRow._rowNumber,
-      name: productRow.Name,
-      description: productRow.Description,
-      price: parseFloat(productRow['Price (€)']),
-      image: productRow['Image URL'],
-      category: productRow.Category,
-      stock: parseInt(productRow.Stock),
+      id: updatedData.ID || productRow.rowIndex.toString(),
+      name: updatedData.Name,
+      description: updatedData.Description,
+      price: parseFloat(updatedData['Price (€)']),
+      image: updatedData['Image URL'],
+      category: updatedData.Category,
+      stock: parseInt(updatedData.Stock),
     });
   } catch (error) {
     console.error('Error updating product:', error);
@@ -214,24 +255,23 @@ app.post('/api/products', async (req, res) => {
     const sheet = doc.sheetsByIndex[0];
     
     // Add new row
-    const newRow = await sheet.addRow({
+    await sheet.addRow({
       Name: name,
       Description: description,
-      'Price (€)': price,
+      'Price (€)': price.toString(),
       'Image URL': image,
       Category: category,
-      Stock: stock,
+      Stock: stock.toString(),
       Status: 'active',
     });
     
     res.status(201).json({
-      id: newRow.ID || newRow._rowNumber,
       name,
       description,
-      price: parseFloat(price),
+      price: parseFloat(price.toString()),
       image,
       category,
-      stock: parseInt(stock),
+      stock: parseInt(stock.toString()),
     });
   } catch (error) {
     console.error('Error adding product:', error);
@@ -248,7 +288,10 @@ app.delete('/api/products/:id', async (req, res) => {
     const sheet = doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
     
-    const productRow = rows.find(row => row.ID == id || row._rowNumber == id);
+    const productRow = rows.find(row => {
+      const rowData = row.toObject() as ProductRowData;
+      return rowData.ID === id || row.rowIndex.toString() === id;
+    });
     
     if (!productRow) {
       return res.status(404).json({ error: 'Product not found' });
