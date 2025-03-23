@@ -3,11 +3,43 @@ import { useState, useEffect } from "react";
 import { getProducts } from "../api/products";
 import { Product } from "../types/product";
 import ProductCard from "./ProductCard";
+import { useToast } from "../hooks/use-toast";
+import { useLocation } from "react-router-dom";
 
 const ProductsSection = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const location = useLocation();
+
+  // Check for success/cancelled query params
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const success = queryParams.get('success');
+    const cancelled = queryParams.get('cancelled');
+    
+    if (success === 'true') {
+      toast({
+        title: "Purchase Successful",
+        description: "Thank you for your purchase! Your order has been processed.",
+        duration: 5000,
+      });
+    } else if (cancelled === 'true') {
+      toast({
+        title: "Purchase Cancelled",
+        description: "Your purchase was cancelled. Feel free to continue shopping.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+    
+    // Clean up URL query params
+    if (success || cancelled) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [location.search, toast]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -44,10 +76,22 @@ const ProductsSection = () => {
         {error && (
           <div className="text-center py-12">
             <p className="text-red-500">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-furniture-charcoal text-white rounded hover:bg-furniture-darkgray transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
 
-        {!isLoading && !error && (
+        {!isLoading && !error && products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-furniture-gray">No products available at the moment. Please check back soon!</p>
+          </div>
+        )}
+
+        {!isLoading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
