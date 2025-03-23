@@ -13,14 +13,12 @@ const ProductsSection = () => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching products...");
         const data = await getProducts();
-        console.log("Products received:", data);
         setProducts(data);
         setError(null);
       } catch (err) {
-        console.error("Error fetching products:", err);
         setError("Failed to load products. Please try again later.");
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -46,22 +44,10 @@ const ProductsSection = () => {
         {error && (
           <div className="text-center py-12">
             <p className="text-red-500">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-furniture-charcoal text-white rounded hover:bg-black transition-colors"
-            >
-              Try Again
-            </button>
           </div>
         )}
 
-        {!isLoading && !error && products.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-furniture-darkgray">No products currently available.</p>
-          </div>
-        )}
-
-        {!isLoading && !error && products.length > 0 && (
+        {!isLoading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
