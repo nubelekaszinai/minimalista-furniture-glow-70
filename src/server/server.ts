@@ -17,7 +17,11 @@ const PRODUCTS_SHEET_INDEX = 0;
 
 // Initialize Express app
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',  // Allow all origins for testing
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 
 // Initialize Stripe
@@ -62,13 +66,14 @@ async function getActiveProducts() {
     const sheet = doc.sheetsByIndex[PRODUCTS_SHEET_INDEX];
     
     // Load all rows
+    await sheet.loadHeaderRow();
     const rows = await sheet.getRows();
     
     // Filter and map active products
     const products: Product[] = [];
     
     for (const row of rows) {
-      const rowData = row.toObject() as ProductRowData;
+      const rowData = row.toObject() as unknown as ProductRowData;
       
       // Only include products with stock > 0 and status = "active"
       if (rowData.Stock > 0 && rowData.Status === 'active') {
@@ -97,77 +102,18 @@ async function getActiveProducts() {
   }
 }
 
-// Helper function to find a product by ID
-async function findProductById(productId: string) {
-  try {
-    const doc = await getSpreadsheet();
-    const sheet = doc.sheetsByIndex[PRODUCTS_SHEET_INDEX];
-    
-    // Load all rows
-    const rows = await sheet.getRows();
-    
-    // Find the product
-    for (const row of rows) {
-      const rowData = row.toObject() as ProductRowData;
-      
-      if (rowData.ID === productId) {
-        return {
-          row,
-          product: {
-            id: rowData.ID,
-            name: rowData.Name,
-            description: rowData.Description,
-            price: rowData["Price (€)"],
-            image: rowData["Image URL"],
-            category: rowData.Category,
-            stock: rowData.Stock,
-            status: rowData.Status
-          }
-        };
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error(`Error finding product with ID ${productId}:`, error);
-    throw error;
-  }
-}
-
-// Helper function to update product stock
-async function updateProductStock(productId: string, newStock: number) {
-  try {
-    const productData = await findProductById(productId);
-    
-    if (!productData) {
-      throw new Error(`Product with ID ${productId} not found`);
-    }
-    
-    const { row } = productData;
-    
-    // Update stock
-    row.set('Stock', newStock);
-    
-    // If stock reaches 0, set status to "sold"
-    if (newStock <= 0) {
-      row.set('Status', 'sold');
-    }
-    
-    // Save the changes
-    await row.save();
-    
-    return true;
-  } catch (error) {
-    console.error(`Error updating stock for product ${productId}:`, error);
-    throw error;
-  }
-}
-
 // API endpoints
+// Health check endpoint
+app.get('/api/health-check', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
 // Get active products
 app.get('/api/products', async (req, res) => {
   try {
+    console.log('Fetching products from Google Sheets...');
     const products = await getActiveProducts();
+    console.log(`Found ${products.length} active products`);
     res.json({ products });
   } catch (error) {
     console.error('Error in /api/products:', error);
@@ -267,7 +213,7 @@ app.post('/api/webhook', bodyParser.raw({ type: 'application/json' }), async (re
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
 
 export default app;

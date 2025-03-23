@@ -11,6 +11,20 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Start the server first
+    const startServer = async () => {
+      try {
+        // Make a request to wake up the server
+        await fetch('http://localhost:3001/api/health-check').catch(() => {
+          console.log('Server may need to be started manually. Run: node start-server.js');
+        });
+      } catch (error) {
+        console.error('Error starting server:', error);
+      }
+    };
+
+    startServer();
+
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);

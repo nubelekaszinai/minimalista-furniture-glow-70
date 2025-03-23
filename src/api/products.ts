@@ -4,7 +4,8 @@ import { Product } from "../types/product";
 // Get products from API
 export const getProducts = async (): Promise<Product[]> => {
   try {
-    const response = await fetch('/api/products');
+    // Use the full URL including port to access the server
+    const response = await fetch('http://localhost:3001/api/products');
     
     if (!response.ok) {
       throw new Error(`Error fetching products: ${response.statusText}`);
@@ -22,7 +23,8 @@ export const getProducts = async (): Promise<Product[]> => {
 // Create checkout session for a product
 export const createCheckoutSession = async (productId: string): Promise<string> => {
   try {
-    const response = await fetch('/api/create-checkout-session', {
+    // Use the full URL including port to access the server
+    const response = await fetch('http://localhost:3001/api/create-checkout-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -13,12 +13,14 @@ const ProductsSection = () => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching products...");
         const data = await getProducts();
+        console.log("Products received:", data);
         setProducts(data);
         setError(null);
       } catch (err) {
+        console.error("Error fetching products:", err);
         setError("Failed to load products. Please try again later.");
-        console.error(err);
       } finally {
         setIsLoading(false);
       }
