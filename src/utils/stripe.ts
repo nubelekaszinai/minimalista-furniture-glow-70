@@ -33,7 +33,7 @@ export const getStripe = async () => {
   return stripePromise;
 };
 
-// Redirect to Stripe hosted checkout
+// Redirect to Stripe Checkout using the proper API
 export const redirectToCheckout = async (productId: string) => {
   const priceId = productToPriceMap[productId];
   
@@ -46,10 +46,20 @@ export const redirectToCheckout = async (productId: string) => {
     // Get the Stripe instance
     const stripe = await getStripe();
     
-    // Use Stripe's redirectToCheckout with a sessionId from your backend
-    // Since we don't have a backend, we'll use Stripe Checkout's direct integration
-    window.location.href = `https://checkout.stripe.com/pay/${priceId}`;
+    // Use Stripe's redirectToCheckout API
+    const { error } = await stripe.redirectToCheckout({
+      lineItems: [{ price: priceId, quantity: 1 }],
+      mode: 'payment',
+      successUrl: `${window.location.origin}/success`,
+      cancelUrl: `${window.location.origin}/cancel`
+    });
+
+    if (error) {
+      console.error('Stripe checkout error:', error);
+      throw new Error(error.message);
+    }
   } catch (err) {
     console.error('Failed to redirect to checkout:', err);
+    throw err;
   }
 };
