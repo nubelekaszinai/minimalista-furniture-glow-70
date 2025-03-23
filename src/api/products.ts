@@ -81,18 +81,21 @@ export const getProducts = async (): Promise<Product[]> => {
       return mockProducts;
     }
     
+    console.log("API response data:", data); // For debugging
+    
     // Map the API response to our Product interface
     // Only include products with "active" status
     const products = data
-      .filter((item: any) => item.Status === "active")
+      .filter((item: any) => item.status === "active")
       .map((item: any) => ({
-        id: item.ID || String(Math.random()),
-        name: item.Name || "Product Name Missing",
-        description: item.Description || "No description available",
-        price: parseFloat(item.Price) || 0,
-        image: item.Image || "https://images.unsplash.com/photo-1551298370-9d3d53740c72?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-        stock: parseInt(item.Stock) || 0,
-        status: item.Status || "inactive"
+        id: String(item.id) || String(Math.random()),
+        name: item.name || "Product Name Missing",
+        description: item.description || "No description available",
+        price: parseFloat(item.price) || 0,
+        image: item.image_url || "https://images.unsplash.com/photo-1551298370-9d3d53740c72?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+        category: "Furniture", // Default category if not provided
+        stock: parseInt(item.stock) || 0,
+        status: item.status || "inactive"
       }));
     
     if (products.length === 0) {
