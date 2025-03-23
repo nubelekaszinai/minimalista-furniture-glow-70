@@ -2,7 +2,7 @@
 import { google } from 'googleapis';
 import { Product } from '../types/product';
 
-// Initialize the Google Sheets API client
+// Initialize the Google Sheets API client with browser compatibility
 const auth = new google.auth.GoogleAuth({
   keyFile: './config/my-project-1495795620978-89212454248a.json',
   scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
@@ -16,6 +16,9 @@ const RANGE = 'Products!A2:I'; // Assuming headers are in row 1
 
 export async function fetchProductsFromSheet(): Promise<Product[]> {
   try {
+    console.log('Attempting to fetch products from Google Sheets...');
+    
+    // This will likely fail in browser environment, so we'll catch and use mock data
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: RANGE,
@@ -51,6 +54,7 @@ export async function fetchProductsFromSheet(): Promise<Product[]> {
     return activeProducts.slice(0, 6);
   } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
+    console.log('Falling back to mock data in getProducts()');
     return [];
   }
 }

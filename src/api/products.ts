@@ -69,6 +69,7 @@ export const mockProducts: Product[] = [
 export const getProducts = async (): Promise<Product[]> => {
   try {
     // Try to fetch products from Google Sheets
+    // Note: In browser environments, this will likely fail due to CORS or Node.js dependency issues
     const sheetProducts = await fetchProductsFromSheet();
     
     // If we got products from the sheet, return them
