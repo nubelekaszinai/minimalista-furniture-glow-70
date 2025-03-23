@@ -1,7 +1,8 @@
+
 import { Product } from "../types/product";
 import { fetchProductsFromSheet } from "../utils/googleSheets";
 
-// Mock data as fallback if the API call fails
+// Original mock products as fallback if all else fails
 export const mockProducts: Product[] = [
   {
     id: "1",
@@ -67,20 +68,20 @@ export const mockProducts: Product[] = [
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
-    // In browser environments, this will use mock data
+    // Attempt to fetch from our simulated Google Sheets API
     const sheetProducts = await fetchProductsFromSheet();
     
-    // If we got products from the sheet (which won't happen in browser), return them
+    // If we got products from the sheet, return them
     if (sheetProducts && sheetProducts.length > 0) {
       return sheetProducts;
     } else {
-      // Always fall back to mock data in browser environment
-      console.log('Using mock product data');
+      // Fallback to original mock data if no products were found
+      console.log('No products found from sheets API, using original mock data');
       return mockProducts;
     }
   } catch (error) {
     console.error('Error getting products:', error);
-    // Fallback to mock data in case of error
+    // Fallback to mock data in case of any error
     return mockProducts;
   }
 };
