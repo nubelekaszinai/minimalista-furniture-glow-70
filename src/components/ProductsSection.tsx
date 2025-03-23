@@ -3,36 +3,21 @@ import { useState, useEffect } from "react";
 import { getProducts } from "../api/products";
 import { Product } from "../types/product";
 import ProductCard from "./ProductCard";
-import { useToast } from "../hooks/use-toast";
 
 const ProductsSection = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
         const data = await getProducts();
-        
-        // Filter out inactive products (should already be done in the API function, but double-check)
-        const activeProducts = data.filter(product => product.status === "active");
-        
-        setProducts(activeProducts);
+        setProducts(data);
         setError(null);
       } catch (err) {
-        const errorMessage = "Failed to load products. Please try again later.";
-        setError(errorMessage);
-        
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-          duration: 5000,
-        });
-        
+        setError("Failed to load products. Please try again later.");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -40,7 +25,7 @@ const ProductsSection = () => {
     };
 
     fetchProducts();
-  }, [toast]);
+  }, []);
 
   return (
     <section id="products" className="page-section bg-furniture-white">
@@ -62,13 +47,7 @@ const ProductsSection = () => {
           </div>
         )}
 
-        {!isLoading && !error && products.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-furniture-gray">No products available at the moment.</p>
-          </div>
-        )}
-
-        {!isLoading && !error && products.length > 0 && (
+        {!isLoading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
