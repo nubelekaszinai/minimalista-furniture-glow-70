@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
-import { Button } from "./ui/button";
 
 interface ProductCardProps {
   product: Product;
@@ -12,46 +11,14 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, index }: ProductCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleBuyNow = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Call our secure checkout endpoint
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          productId: product.id,
-          productName: product.name,
-          price: product.price,
-          image: product.image
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      
-      const { url } = await response.json();
-      
-      // Redirect to Stripe Checkout
-      window.location.href = url;
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      toast({
-        title: "Error",
-        description: "Could not process payment. Please try again.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleBuyNow = () => {
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+      duration: 3000,
+    });
   };
 
   const isInStock = product.stock > 0;
@@ -95,14 +62,13 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         <p className="mt-3 text-furniture-darkgray font-medium">${product.price.toLocaleString()}</p>
         
         <div className="mt-4">
-          <Button 
+          <button 
             onClick={handleBuyNow} 
-            disabled={!isInStock || isLoading}
-            className={`w-full ${!isInStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-            variant="default"
+            className={`buy-button ${!isInStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!isInStock}
           >
-            {isLoading ? 'Processing...' : isInStock ? 'Buy Now' : 'Out of Stock'}
-          </Button>
+            {isInStock ? 'Buy Now' : 'Out of Stock'}
+          </button>
         </div>
       </div>
     </div>
