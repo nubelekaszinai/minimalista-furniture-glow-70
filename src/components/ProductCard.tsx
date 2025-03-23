@@ -27,6 +27,10 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
     });
     
     try {
+      // Log for debugging
+      console.log("Initiating checkout for product:", product.id);
+      
+      // Redirect to checkout using the updated function
       await redirectToCheckout(product.id);
     } catch (error) {
       console.error("Checkout error:", error);
