@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -20,12 +21,14 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
     });
   };
 
+  const isInStock = product.stock > 0;
+
   return (
     <div 
       className="product-card opacity-0 animate-fade-in p-4"
       style={{ animationDelay: `${index * 150}ms`, animationFillMode: 'forwards' }}
     >
-      <div className="image-container aspect-square mb-4 bg-furniture-offwhite">
+      <div className="image-container relative aspect-square mb-4 bg-furniture-offwhite">
         {/* Product Image with Fade-in effect */}
         <img
           src={product.image}
@@ -35,16 +38,36 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
           } transition-opacity duration-700`}
           onLoad={() => setIsImageLoaded(true)}
         />
+        
+        {/* Stock status indicator */}
+        <div className="absolute top-3 right-3">
+          {isInStock ? (
+            <div className="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <CheckCircle size={14} className="mr-1" />
+              In Stock: {product.stock}
+            </div>
+          ) : (
+            <div className="bg-red-50 text-red-700 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <AlertTriangle size={14} className="mr-1" />
+              Out of Stock
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="mt-4">
         <h3 className="text-lg font-medium text-furniture-charcoal">{product.name}</h3>
-        <p className="text-sm text-furniture-gray mt-1">{product.category}</p>
+        {product.category && <p className="text-sm text-furniture-gray mt-1">{product.category}</p>}
+        <p className="mt-2 text-sm text-furniture-darkgray line-clamp-2">{product.description}</p>
         <p className="mt-3 text-furniture-darkgray font-medium">${product.price.toLocaleString()}</p>
         
         <div className="mt-4">
-          <button onClick={handleBuyNow} className="buy-button">
-            Buy Now
+          <button 
+            onClick={handleBuyNow} 
+            className={`buy-button ${!isInStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!isInStock}
+          >
+            {isInStock ? 'Buy Now' : 'Out of Stock'}
           </button>
         </div>
       </div>

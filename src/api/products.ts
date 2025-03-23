@@ -1,7 +1,6 @@
-
 import { Product } from "../types/product";
 
-// Mock data until we connect to Google Sheets API
+// Mock data as fallback in case the API fails
 export const mockProducts: Product[] = [
   {
     id: "1",
@@ -9,7 +8,9 @@ export const mockProducts: Product[] = [
     description: "A sleek, comfortable chair perfect for modern living spaces. Made from sustainable materials with expert craftsmanship.",
     price: 899,
     image: "https://images.unsplash.com/photo-1567538096621-38d2284b23ff?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Seating"
+    category: "Seating",
+    stock: 5,
+    status: "active"
   },
   {
     id: "2",
@@ -17,7 +18,9 @@ export const mockProducts: Product[] = [
     description: "An eye-catching centerpiece with clean lines and natural materials. Perfect height and proportions for any living room.",
     price: 1250,
     image: "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Tables"
+    category: "Tables",
+    stock: 3,
+    status: "active"
   },
   {
     id: "3",
@@ -53,10 +56,45 @@ export const mockProducts: Product[] = [
   }
 ];
 
-// This function will be replaced with actual API call later
 export const getProducts = async (): Promise<Product[]> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  
-  return mockProducts;
+  try {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbyikGLQcGs5FOq-VHlQoZyJF1-FNQQoVYECLmfXjkYt/dev");
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Verify the data structure
+    if (!Array.isArray(data)) {
+      console.error("API response is not an array:", data);
+      return mockProducts;
+    }
+    
+    // Map the API response to our Product interface
+    // Only include products with "active" status
+    const products = data
+      .filter((item: any) => item.Status === "active")
+      .map((item: any) => ({
+        id: item.ID || String(Math.random()),
+        name: item.Name || "Product Name Missing",
+        description: item.Description || "No description available",
+        price: parseFloat(item.Price) || 0,
+        image: item.Image || "https://images.unsplash.com/photo-1551298370-9d3d53740c72?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+        stock: parseInt(item.Stock) || 0,
+        status: item.Status || "inactive"
+      }));
+    
+    if (products.length === 0) {
+      console.warn("No active products found in the API response");
+      return mockProducts;
+    }
+    
+    return products;
+  } catch (error) {
+    console.error("Error fetching products from API:", error);
+    // Return mock data if the API call fails
+    return mockProducts;
+  }
 };
