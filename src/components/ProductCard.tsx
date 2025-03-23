@@ -37,7 +37,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         variant: "destructive",
         duration: 5000,
       });
-    } finally {
       setIsProcessing(false);
     }
   };

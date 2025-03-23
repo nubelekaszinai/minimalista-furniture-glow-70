@@ -33,7 +33,7 @@ export const getStripe = async () => {
   return stripePromise;
 };
 
-// Redirect to Stripe Checkout
+// Redirect to Stripe Checkout using the proper API
 export const redirectToCheckout = async (productId: string) => {
   const priceId = productToPriceMap[productId];
   
@@ -43,31 +43,20 @@ export const redirectToCheckout = async (productId: string) => {
   }
 
   try {
-    // Create a Checkout Session URL
+    // Get the Stripe instance
     const stripe = await getStripe();
     
-    // Create a checkout session with Stripe
-    const { error, id } = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
+    // Use Stripe's redirectToCheckout API
+    const { error } = await stripe.redirectToCheckout({
+      lineItems: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
-      success_url: `${window.location.origin}/success`,
-      cancel_url: `${window.location.origin}/cancel`,
+      successUrl: `${window.location.origin}/success`,
+      cancelUrl: `${window.location.origin}/cancel`
     });
 
     if (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Stripe checkout error:', error);
       throw new Error(error.message);
-    }
-
-    // Redirect to checkout
-    const result = await stripe.redirectToCheckout({
-      sessionId: id
-    });
-
-    if (result.error) {
-      console.error('Stripe checkout error:', result.error);
-      throw new Error(result.error.message);
     }
   } catch (err) {
     console.error('Failed to redirect to checkout:', err);
