@@ -1,4 +1,3 @@
-
 import { Product } from "../types/product";
 import { fetchProductsFromSheet } from "../utils/googleSheets";
 
@@ -68,16 +67,15 @@ export const mockProducts: Product[] = [
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
-    // Try to fetch products from Google Sheets
-    // Note: In browser environments, this will likely fail due to CORS or Node.js dependency issues
+    // In browser environments, this will use mock data
     const sheetProducts = await fetchProductsFromSheet();
     
-    // If we got products from the sheet, return them
+    // If we got products from the sheet (which won't happen in browser), return them
     if (sheetProducts && sheetProducts.length > 0) {
       return sheetProducts;
     } else {
-      // Fallback to mock data if no products were found or error occurred
-      console.log('Falling back to mock product data');
+      // Always fall back to mock data in browser environment
+      console.log('Using mock product data');
       return mockProducts;
     }
   } catch (error) {

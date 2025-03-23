@@ -29,6 +29,8 @@ export default defineConfig(({ mode }) => ({
       env: {},
       browser: true,
       version: JSON.stringify(process.version),
+      stdout: { isTTY: false },
+      stderr: { isTTY: false }
     },
   }
 }));
