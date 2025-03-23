@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
@@ -27,10 +26,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
     });
     
     try {
-      // Log for debugging
       console.log("Initiating checkout for product:", product.id);
-      
-      // Redirect to checkout using the updated function
       await redirectToCheckout(product.id);
     } catch (error) {
       console.error("Checkout error:", error);
@@ -40,7 +36,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         variant: "destructive",
         duration: 5000,
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -53,7 +48,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
       style={{ animationDelay: `${index * 150}ms`, animationFillMode: 'forwards' }}
     >
       <div className="image-container relative aspect-square mb-4 bg-furniture-offwhite">
-        {/* Product Image with Fade-in effect */}
         <img
           src={product.image}
           alt={product.name}
@@ -63,7 +57,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
           onLoad={() => setIsImageLoaded(true)}
         />
         
-        {/* Stock status indicator */}
         <div className="absolute top-3 right-3">
           {isInStock ? (
             <div className="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-medium flex items-center">
