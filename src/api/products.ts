@@ -1,7 +1,47 @@
-
 import { Product } from "../types/product";
 
-// Mock data until we connect to Google Sheets API
+// Get products from API
+export const getProducts = async (): Promise<Product[]> => {
+  try {
+    const response = await fetch('/api/products');
+    
+    if (!response.ok) {
+      throw new Error(`Error fetching products: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.products;
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    // Return mock data as fallback in case of error
+    return mockProducts;
+  }
+};
+
+// Create checkout session for a product
+export const createCheckoutSession = async (productId: string): Promise<string> => {
+  try {
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error creating checkout session: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error("Failed to create checkout session:", error);
+    throw error;
+  }
+};
+
+// Mock data as fallback if API fails
 export const mockProducts: Product[] = [
   {
     id: "1",
@@ -9,7 +49,9 @@ export const mockProducts: Product[] = [
     description: "A sleek, comfortable chair perfect for modern living spaces. Made from sustainable materials with expert craftsmanship.",
     price: 899,
     image: "https://images.unsplash.com/photo-1567538096621-38d2284b23ff?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Seating"
+    category: "Seating",
+    stock: 5,
+    status: "active"
   },
   {
     id: "2",
@@ -52,11 +94,3 @@ export const mockProducts: Product[] = [
     category: "Lighting"
   }
 ];
-
-// This function will be replaced with actual API call later
-export const getProducts = async (): Promise<Product[]> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  
-  return mockProducts;
-};

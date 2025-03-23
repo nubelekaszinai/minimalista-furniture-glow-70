@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
+import { createCheckoutSession } from "../api/products";
 
 interface ProductCardProps {
   product: Product;
@@ -10,14 +11,30 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, index }: ProductCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleBuyNow = () => {
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
-      duration: 3000,
-    });
+  const handleBuyNow = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Create a checkout session and redirect to Stripe
+      const checkoutUrl = await createCheckoutSession(product.id);
+      
+      // Redirect to the Stripe checkout page
+      window.location.href = checkoutUrl;
+      
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      toast({
+        title: "Checkout failed",
+        description: "Unable to proceed to checkout. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,8 +60,15 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         <p className="mt-3 text-furniture-darkgray font-medium">${product.price.toLocaleString()}</p>
         
         <div className="mt-4">
-          <button onClick={handleBuyNow} className="buy-button">
-            Buy Now
+          <button 
+            onClick={handleBuyNow} 
+            className="buy-button w-full relative"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+            ) : null}
+            {isLoading ? "Processing..." : "Buy Now"}
           </button>
         </div>
       </div>

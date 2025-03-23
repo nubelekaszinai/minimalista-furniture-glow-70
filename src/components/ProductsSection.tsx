@@ -44,10 +44,22 @@ const ProductsSection = () => {
         {error && (
           <div className="text-center py-12">
             <p className="text-red-500">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-furniture-charcoal text-white rounded hover:bg-black transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
 
-        {!isLoading && !error && (
+        {!isLoading && !error && products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-furniture-darkgray">No products currently available.</p>
+          </div>
+        )}
+
+        {!isLoading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
