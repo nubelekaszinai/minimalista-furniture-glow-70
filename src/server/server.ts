@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
@@ -23,7 +22,7 @@ app.use(bodyParser.json());
 
 // Initialize Stripe
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-02-24.acacia',
 });
 
 // Initialize Google Sheets
