@@ -1,50 +1,7 @@
 
 import { Product } from "../types/product";
 
-// API base URL - change this to your server URL in production
-const API_BASE_URL = 'http://localhost:3001/api';
-
-// Fetch products from the API
-export const getProducts = async (): Promise<Product[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/products`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    // Fallback to mock data if the API fails
-    return mockProducts;
-  }
-};
-
-// Create a checkout session for a product
-export const createCheckoutSession = async (productId: string): Promise<{ url: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ productId }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to create checkout session: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return { url: data.url };
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
-    throw error;
-  }
-};
-
-// Mock data for fallback
+// Mock data until we connect to Google Sheets API
 export const mockProducts: Product[] = [
   {
     id: "1",
@@ -95,3 +52,11 @@ export const mockProducts: Product[] = [
     category: "Lighting"
   }
 ];
+
+// This function will be replaced with actual API call later
+export const getProducts = async (): Promise<Product[]> => {
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  
+  return mockProducts;
+};
