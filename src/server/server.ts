@@ -17,6 +17,8 @@ const SERVICE_ACCOUNT_FILE_PATH = path.resolve(__dirname, '../../config/my-proje
 const PRODUCTS_SHEET_INDEX = 0;
 
 // Initialize Express app
+const app = express();
+
 app.use(cors({
   origin: '*',  // Allow all origins for testing
   methods: ['GET', 'POST'],
@@ -28,9 +30,6 @@ app.use(bodyParser.json());
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2025-02-24.acacia',
 });
-
-// Initialize Express app
-const app = express();
 
 // Initialize Google Sheets
 async function getSpreadsheet() {
