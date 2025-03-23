@@ -1,3 +1,4 @@
+
 import { Product } from "../types/product";
 
 // Mock data as fallback in case the API fails
@@ -28,7 +29,9 @@ export const mockProducts: Product[] = [
     description: "Customize your storage solution with this adaptable bookshelf. Crafted from solid oak with adjustable components.",
     price: 1899,
     image: "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Storage"
+    category: "Storage",
+    stock: 2,
+    status: "active"
   },
   {
     id: "4",
@@ -36,7 +39,9 @@ export const mockProducts: Product[] = [
     description: "Elegantly designed dining chair combining comfort and minimalist design. Perfect for extended dinner conversations.",
     price: 450,
     image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Seating"
+    category: "Seating",
+    stock: 8,
+    status: "active"
   },
   {
     id: "5",
@@ -44,7 +49,9 @@ export const mockProducts: Product[] = [
     description: "Space-saving wall-mounted nightstand with a drawer for essentials. Perfect for small bedrooms.",
     price: 399,
     image: "https://images.unsplash.com/photo-1551298370-9d3d53740c72?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Bedroom"
+    category: "Bedroom",
+    stock: 0,
+    status: "active"
   },
   {
     id: "6",
@@ -52,13 +59,15 @@ export const mockProducts: Product[] = [
     description: "Sculptural lighting piece that provides warm, ambient illumination. Made from hand-blown glass and brass.",
     price: 749,
     image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    category: "Lighting"
+    category: "Lighting",
+    stock: 4,
+    status: "active"
   }
 ];
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbyikGLQcGs5FOq-VHlQoZyJF1-FNQQoVYECLmfXjkYt/dev");
+    const response = await fetch("https://script.google.com/macros/s/AKfycbzLg2TZIUatiqA0Fls90aOEGA9k-6kMP6Dl-fVNWqWdTUte_cpExQTP5cA_VQCi7YZkcw/exec");
     
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
