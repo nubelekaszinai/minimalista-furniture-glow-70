@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
@@ -16,7 +17,6 @@ const SERVICE_ACCOUNT_FILE_PATH = path.resolve(__dirname, '../../config/my-proje
 const PRODUCTS_SHEET_INDEX = 0;
 
 // Initialize Express app
-const app = express();
 app.use(cors({
   origin: '*',  // Allow all origins for testing
   methods: ['GET', 'POST'],
@@ -28,6 +28,9 @@ app.use(bodyParser.json());
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2025-02-24.acacia',
 });
+
+// Initialize Express app
+const app = express();
 
 // Initialize Google Sheets
 async function getSpreadsheet() {
@@ -99,6 +102,73 @@ async function getActiveProducts() {
   } catch (error) {
     console.error('Error fetching active products:', error);
     throw error;
+  }
+}
+
+// Helper function to find a product by ID
+async function findProductById(productId: string): Promise<{ product: Product, row: any } | null> {
+  try {
+    const doc = await getSpreadsheet();
+    const sheet = doc.sheetsByIndex[PRODUCTS_SHEET_INDEX];
+    
+    // Load all rows
+    await sheet.loadHeaderRow();
+    const rows = await sheet.getRows();
+    
+    for (const row of rows) {
+      const rowData = row.toObject() as unknown as ProductRowData;
+      
+      if (rowData.ID === productId) {
+        const product: Product = {
+          id: rowData.ID,
+          name: rowData.Name,
+          description: rowData.Description,
+          price: rowData["Price (€)"],
+          image: rowData["Image URL"],
+          category: rowData.Category,
+          stock: rowData.Stock,
+          status: rowData.Status
+        };
+        
+        return { product, row };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error finding product with ID ${productId}:`, error);
+    throw error;
+  }
+}
+
+// Helper function to update product stock
+async function updateProductStock(productId: string, newStock: number): Promise<boolean> {
+  try {
+    const productData = await findProductById(productId);
+    
+    if (!productData) {
+      console.error(`Product with ID ${productId} not found for stock update`);
+      return false;
+    }
+    
+    const { row } = productData;
+    
+    // Update stock
+    row.Stock = newStock;
+    
+    // If stock is 0, update status to "sold"
+    if (newStock <= 0) {
+      row.Status = 'sold';
+    }
+    
+    // Save changes
+    await row.save();
+    
+    console.log(`Updated stock for product ${productId} to ${newStock}`);
+    return true;
+  } catch (error) {
+    console.error(`Error updating stock for product ${productId}:`, error);
+    return false;
   }
 }
 
