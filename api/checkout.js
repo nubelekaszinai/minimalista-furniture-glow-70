@@ -1,22 +1,9 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// Map product IDs to Stripe price IDs and product information
 const productMap = {
-  "1": {
-    priceId: "price_1R5cfu2K3ie3J8Hoph6CH4gr",
-    name: "Oak Coffee Table",
-    unitAmount: 14999
-  },
-  "2": {
-    priceId: "price_1R5v9d2K3ie3J8Hob3D81g4w",
-    name: "Modern Nightstand",
-    unitAmount: 7999
-  },
-  "3": {
-    priceId: "price_1R5vAB2K3ie3J8HoqqlNgwxk",
-    name: "White Dresser",
-    unitAmount: 19999
-  }
+  "1": { priceId: "price_1R5cfu2K3ie3J8Hoph6CH4gr", name: "Oak Coffee Table", unitAmount: 14999 },
+  "2": { priceId: "price_1R5v9d2K3ie3J8Hob3D81g4w", name: "Modern Nightstand", unitAmount: 7999 },
+  "3": { priceId: "price_1R5vAB2K3ie3J8HoqqlNgwxk", name: "White Dresser", unitAmount: 19999 }
 };
 
 module.exports = async (req, res) => {
@@ -25,7 +12,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { productId } = req.body;
+        const { productId, email } = req.body;
 
         if (!productId || !productMap[productId]) {
             return res.status(400).json({ error: `Invalid product ID: ${productId}` });
@@ -45,9 +32,7 @@ module.exports = async (req, res) => {
                     quantity: 1,
                 },
             ],
-            shipping_address_collection: {
-                allowed_countries: ['LT'],
-            },
+            shipping_address_collection: { allowed_countries: ['LT'] },
             shipping_options: [
                 {
                     shipping_rate_data: {
@@ -60,6 +45,7 @@ module.exports = async (req, res) => {
             mode: 'payment',
             success_url: `${req.headers.origin}/success`,
             cancel_url: `${req.headers.origin}/cancel`,
+            customer_email: email,
         });
 
         res.status(200).json({ id: session.id });
