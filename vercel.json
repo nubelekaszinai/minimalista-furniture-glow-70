@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/checkout.cjs": {
-      "runtime": "nodejs18.x"
-    }
-  }
-}
