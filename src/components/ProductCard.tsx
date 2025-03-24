@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Product } from "../types/product";
 import { useToast } from "../hooks/use-toast";
-import { CheckCircle, AlertTriangle } from "lucide-react";
-import { redirectToCheckout } from "../utils/stripe";
+import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { createCheckoutSession, redirectToCheckout } from "../utils/stripe";
 
 interface ProductCardProps {
   product: Product;
@@ -22,21 +22,30 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
     
     toast({
       title: "Processing payment",
-      description: `Redirecting to checkout for ${product.name}...`,
+      description: `Preparing checkout for ${product.name}...`,
       duration: 3000,
     });
     
     try {
       console.log("Initiating checkout for product:", product.id);
-      await redirectToCheckout(product.id);
+      
+      // Create checkout session through our API
+      const sessionId = await createCheckoutSession(product.id.toString());
+      
+      // Redirect to Stripe with the session ID
+      await redirectToCheckout(sessionId);
+      
+      // Note: We won't reach this point if redirect is successful
     } catch (error) {
       console.error("Checkout error:", error);
+      
       toast({
         title: "Error",
         description: "Could not redirect to checkout. Please try again.",
         variant: "destructive",
         duration: 5000,
       });
+      
       setIsProcessing(false);
     }
   };
@@ -82,10 +91,17 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         <div className="mt-4">
           <button 
             onClick={handleBuyNow} 
-            className={`buy-button ${!isInStock || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`buy-button flex items-center justify-center w-full ${!isInStock || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={!isInStock || isProcessing}
           >
-            {isProcessing ? 'Processing...' : isInStock ? 'Buy Now' : 'Out of Stock'}
+            {isProcessing ? (
+              <>
+                <Loader2 size={16} className="mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              isInStock ? 'Buy Now' : 'Out of Stock'
+            )}
           </button>
         </div>
       </div>

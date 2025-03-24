@@ -15,13 +15,6 @@ const loadStripe = (): Promise<any> => {
   });
 };
 
-// Map product IDs to Stripe price IDs
-const productToPriceMap: Record<string, string> = {
-  "1": "price_1R5cfu2K3ie3J8Hoph6CH4gr",
-  "2": "price_1R5v9d2K3ie3J8Hob3D81g4w",
-  "3": "price_1R5vAB2K3ie3J8HoqqlNgwxk"
-};
-
 // Initialize Stripe with the publishable key
 let stripePromise: Promise<any> | null = null;
 
@@ -33,29 +26,39 @@ export const getStripe = async () => {
   return stripePromise;
 };
 
-// Redirect to Stripe Checkout using the proper API
-export const redirectToCheckout = async (productId: string) => {
-  const priceId = productToPriceMap[productId];
-  
-  if (!priceId) {
-    console.error(`No price ID found for product ID: ${productId}`);
-    return;
-  }
-
+// Create checkout session via API and redirect to Stripe Checkout
+export const createCheckoutSession = async (productId: string): Promise<string> => {
   try {
-    // Get the Stripe instance
-    const stripe = await getStripe();
-    
-    // Use Stripe's redirectToCheckout API
-    const { error } = await stripe.redirectToCheckout({
-      lineItems: [{ price: priceId, quantity: 1 }],
-      mode: 'payment',
-      successUrl: `${window.location.origin}/success`,
-      cancelUrl: `${window.location.origin}/cancel`
+    // Send request to our checkout API endpoint
+    const response = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productId }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create checkout session');
+    }
+
+    const { id: sessionId } = await response.json();
+    return sessionId;
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    throw error;
+  }
+};
+
+// Redirect to Stripe Checkout using the session ID
+export const redirectToCheckout = async (sessionId: string): Promise<void> => {
+  try {
+    const stripe = await getStripe();
+    const { error } = await stripe.redirectToCheckout({ sessionId });
+    
     if (error) {
-      console.error('Stripe checkout error:', error);
+      console.error('Stripe redirect error:', error);
       throw new Error(error.message);
     }
   } catch (err) {
