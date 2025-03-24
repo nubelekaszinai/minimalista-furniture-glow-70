@@ -34,14 +34,22 @@ module.exports = async (req, res) => {
             ],
             shipping_address_collection: { allowed_countries: ['LT'] },
             shipping_options: [
-                {
-                    shipping_rate_data: {
-                        type: 'fixed_amount',
-                        fixed_amount: { amount: 0, currency: 'eur' },
-                        display_name: 'Shipping (calculated at checkout)',
-                    },
-                },
-            ],
+    {
+        shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: { amount: 0, currency: 'eur' },
+            display_name: 'Nemokamas pristatymas (Šiauliai)',
+        },
+    },
+    {
+        shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: { amount: 3000, currency: 'eur' },
+            display_name: 'Pristatymas visoje Lietuvoje',
+        },
+    },
+],
+
             mode: 'payment',
             success_url: `${req.headers.origin}/success`,
             cancel_url: `${req.headers.origin}/cancel`,
