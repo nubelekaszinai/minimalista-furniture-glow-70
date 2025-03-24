@@ -18,6 +18,7 @@ module.exports = async (req, res) => {
         const shippingDetails = session.shipping_details;
 
         if (!shippingDetails || !shippingDetails.address) {
+            console.error('No shipping address provided.');
             return res.status(400).send('No shipping address provided.');
         }
 
@@ -28,15 +29,23 @@ module.exports = async (req, res) => {
             shippingCost = 0; // Šiaulių rajone nemokamas pristatymas
         }
 
-        try {
-            await stripe.paymentIntents.update(session.payment_intent, {
-                amount: session.amount_total + shippingCost,
-            });
+        if (shippingCost > 0) {
+            try {
+                // Sukuriame papildomą mokėjimo užklausą su siuntimo mokesčiu
+                await stripe.paymentIntents.create({
+                    amount: shippingCost,
+                    currency: 'eur',
+                    customer: session.customer,
+                    description: 'Shipping fee',
+                    payment_method: session.payment_method,
+                    confirm: true,
+                });
 
-            console.log(`Updated order: New total = ${(session.amount_total + shippingCost) / 100} EUR`);
-        } catch (updateError) {
-            console.error('Failed to update payment intent:', updateError);
-            return res.status(500).send('Failed to update payment intent.');
+                console.log(`Applied shipping charge: ${shippingCost / 100} EUR`);
+            } catch (error) {
+                console.error('Failed to charge shipping fee:', error);
+                return res.status(500).send('Failed to charge shipping fee.');
+            }
         }
     }
 
